@@ -436,7 +436,6 @@ local AnimationEntityPrefab = "MISSING"
 local AnimationEntity
 local AnimationTask
 
-
 local function GetAnimationDebugString(ent)
     local debugString = ent:GetDebugString()
 
@@ -474,7 +473,6 @@ local function EndAnimationThread(silent)
     end
     AnimationEntityPrefab = "MISSING"
 end
-
 
 local function StartAnimationThread()
     while AnimationEntity and AnimationEntity:IsValid() and AnimationEntity.AnimState do
