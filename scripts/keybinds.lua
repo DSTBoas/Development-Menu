@@ -122,7 +122,8 @@ local function RemoveEventInterception()
     end
 end
 
-local function SecondsToClock(seconds)
+local function GetFormattedTime()
+    local seconds = os.clock()
     local hours = string.format("%02.f", math.floor(seconds / 3600))
     local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)))
     local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
@@ -138,7 +139,7 @@ local function EventIntercepter(inst, event, ...)
     print(
         string.format(
             "[%s] [EVENT] [%s] %s",
-            SecondsToClock(os.clock()),
+            GetFormattedTime(),
             inst.prefab,
             event
         )
@@ -365,7 +366,6 @@ local function PrintDeltaTags(tab, deltaTab, str)
             print(
                 string.format(
                     str,
-                    SecondsToClock(os.clock()),
                     TagTrackerPrefab,
                     deltaTab[i]
                 )
@@ -374,11 +374,51 @@ local function PrintDeltaTags(tab, deltaTab, str)
     end
 end
 
-local function DoTagDelta(tags)
+local function GetTagDeltas(tab, deltaTab, str)
+    local t = {}
+
+    for i = 1, #deltaTab do
+        if TableContains(tab, deltaTab[i]) == false then
+            t[#t + 1] = str .. deltaTab[i] 
+        end
+    end
+
+    return t
+end
+
+local function MergeTables(...)
+    local t = {}
+
+    local tabs = {...}
+    for _ = 1, #tabs do
+        for i = 1, #tabs[_] do
+            t[#t + 1] = tabs[_][i]
+        end
+    end
+
+    return t
+end
+
+local function PrintTagDelta(tags)
     local newTags = GetTags(TagTrackerEnt)
 
-    PrintDeltaTags(tags, newTags, "[%s] [%s] (%s) tag added.")
-    PrintDeltaTags(newTags, tags, "[%s] [%s] (%s) tag removed.")
+    local addedTags = GetTagDeltas(tags, newTags, "++")
+    local removedTags = GetTagDeltas(newTags, tags, "--")
+    local deltaTags = MergeTables(addedTags, removedTags)
+
+    if #deltaTags > 0 then
+        print(
+            string.format(
+                "[%s] [TAG] [%s] (%s)",
+                GetFormattedTime(),
+                TagTrackerPrefab,
+                table.concat(deltaTags, ", ")
+            )
+        )
+    end
+
+    --PrintDeltaTags(tags, newTags, "[TAG] [%s] (%s) added.")
+    --PrintDeltaTags(newTags, tags, "[TAG] [%s] (%s) removed.")
 
     TagTrackerTags = newTags
 end
@@ -393,7 +433,7 @@ local function EndTagThread(silent)
     if not silent then
         PlayerNotifier(
             string.format(
-                "%s's tracking thread stopped.",
+                "%s's tag tracking stopped.",
                 TagTrackerPrefab
             )
         )
@@ -403,7 +443,7 @@ end
 
 local function StartTagThread()
     while TagTrackerEnt:IsValid() do
-        DoTagDelta(TagTrackerTags)
+        PrintTagDelta(TagTrackerTags)
         Sleep(0)
     end
 
@@ -448,7 +488,7 @@ local function GetAnimationDebugString(ent)
     animFrame = animFrame % animTotalFrames
 
     local str = string.format(
-                    "[%s] Animation: [%s] Frame: [%s/%s] Loops: [%s]",
+                    "[%s] Animation: (%s) Frame: (%s/%s) Loops: (%s)",
                     AnimationEntityPrefab,
                     anim,
                     animFrame,
@@ -460,14 +500,14 @@ end
 
 local function EndAnimationThread(silent)
     AnimationEntity = nil
-    if TagTrackerTask then
+    if AnimationTask then
         scheduler:KillTask(AnimationTask)
     end
     AnimationTask = nil
     if not silent then
         PlayerNotifier(
             string.format(
-                "%s's animation thread stopped.",
+                "%s's animation tracking stopped.",
                 AnimationEntityPrefab
             )
         )

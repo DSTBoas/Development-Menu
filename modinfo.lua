@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.3"
+version = "0.35"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -236,7 +236,7 @@ configuration_options =
         AssignKeyMessage
     ),
     AddConfig(
-        "Entity event interception",
+        "Entity event interceptor",
         "EVENT_LISTEN_SELECT",
         KeyboardOptions,
         "KEY_F3",
