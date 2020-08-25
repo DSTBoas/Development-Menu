@@ -520,9 +520,9 @@ local function StartAnimationThread()
         print(GetAnimationDebugString(AnimationEntity))
         Sleep(0)
     end
-    if AnimationEntity then
-        EndAnimationThread()
-    end
+
+    AnimationTask = nil
+    EndAnimationThread()
 end
 
 AddGameKey("ANIMATION_DELTAS_TRACKER", function()
