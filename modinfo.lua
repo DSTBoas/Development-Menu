@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.2"
+version = "0.3"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -257,24 +257,31 @@ configuration_options =
         AssignKeyMessage
     ),
     AddConfig(
+        "RPC server listener",
+        "RPC_SERVER_LISTENER",
+        KeyboardOptions,
+        "KEY_F6",
+        AssignKeyMessage
+    ),
+    AddConfig(
         "Clear console",
         "CLEAR_CONSOLE",
         KeyboardOptions,
-        "KEY_F6",
+        "KEY_F7",
         AssignKeyMessage
     ),
     AddConfig(
         "Next phase",
         "NEXT_PHASE",
         KeyboardOptions,
-        "KEY_F7",
+        "KEY_F8",
         AssignKeyMessage
     ),
     AddConfig(
         "Stop / Start rain",
         "FORCE_RAIN",
         KeyboardOptions,
-        "KEY_F8",
+        "KEY_F9",
         AssignKeyMessage
     ),
 

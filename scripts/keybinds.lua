@@ -9,7 +9,8 @@ local function ValidateFocusState()
            and activeScreen.name == "ModConfigurationScreen"
            and focusWidget
            and focusWidget.texture
-           and focusWidget.texture:find("spinner"))
+           and (focusWidget.texture:find("spinner"))
+                or focusWidget.texture:find("arrow"))
 end
 
 local function ValidateScreenState()
@@ -108,7 +109,7 @@ AddGlobalKey("DUMP_SELECT", function()
 end)
 
 local function ValidateEntity(ent)
-    return ent and type(ent) == "table" and ent.PushEvent 
+    return ent and type(ent) == "table" and ent.PushEvent
 end
 
 local InterceptEntity = {}
@@ -479,9 +480,9 @@ local function StartAnimationThread()
         print(GetAnimationDebugString(AnimationEntity))
         Sleep(0)
     end
-
-    AnimationTask = nil
-    EndAnimationThread()
+    if AnimationEntity then
+        EndAnimationThread()
+    end
 end
 
 AddGameKey("ANIMATION_DELTAS_TRACKER", function()
@@ -502,4 +503,79 @@ AddGameKey("ANIMATION_DELTAS_TRACKER", function()
             )
         )
     end
+end)
+
+local OldSendRPCToServer = SendRPCToServer
+
+local function TranslateRPC(code)
+    for name, rpcCode in pairs(RPC) do
+        if code == rpcCode then
+            return string.format(
+                        "RPC.%s",
+                        name
+                   )
+        end
+    end
+
+    return code
+end
+
+local function TranslateAction(code)
+    for name, action in pairs(ACTIONS) do
+        if action.code == code then
+            return string.format(
+                        "ACTIONS.%s.code",
+                        name
+                   )
+        end
+    end
+
+    return code
+end
+
+local function IsActionRPC(code)
+    return code == 57
+        or code == 1
+end
+
+local function RPCServerIntercepter(...)
+    local t = {}
+
+    local arg = {...}
+    for i = 1, #arg do
+        if i == 1 then
+            t[#t + 1] = TranslateRPC(arg[1])
+        elseif i == 2 and (#arg == 11 or IsActionRPC(arg[1])) then
+            t[#t + 1] = TranslateAction(arg[2])
+        else
+            t[#t + 1] = tostring(arg[i])
+        end
+    end
+
+    print(
+        string.format(
+            "SendRPCToServer(%s)",
+            table.concat(t, ", ")
+        )
+    )
+
+    OldSendRPCToServer(...)
+end
+
+AddGameKey("RPC_SERVER_LISTENER", function()
+    local str = "started"
+
+    if SendRPCToServer ~= RPCServerIntercepter then
+        SendRPCToServer = RPCServerIntercepter
+    else
+        str = "stopped"
+        SendRPCToServer = OldSendRPCToServer
+    end
+
+    PlayerNotifier(
+        string.format(
+            "RPC server %s listening.",
+            str
+        )
+    )
 end)
