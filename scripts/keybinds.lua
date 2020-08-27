@@ -9,8 +9,7 @@ local function ValidateFocusState()
            and activeScreen.name == "ModConfigurationScreen"
            and focusWidget
            and focusWidget.texture
-           and (focusWidget.texture:find("spinner"))
-                or focusWidget.texture:find("arrow"))
+           and (focusWidget.texture:find("spinner") or focusWidget.texture:find("arrow")))
 end
 
 local function ValidateScreenState()
