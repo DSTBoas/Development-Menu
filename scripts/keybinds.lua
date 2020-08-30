@@ -121,24 +121,25 @@ local function RemoveEventInterception()
     end
 end
 
-local function GetFormattedTime()
+local function GetFormattedOsClock()
     local seconds = os.clock()
-    local hours = string.format("%02.f", math.floor(seconds / 3600))
-    local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)))
-    local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
 
     if seconds <= 0 then
         return "00:00:00"
     end
 
-    return hours..":"..mins..":"..secs
+    local hours = string.format("%02.f", math.floor(seconds / 3600))
+    local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)))
+    local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
+
+    return hours .. ":" .. mins .. ":" .. secs
 end
 
-local function EventIntercepter(inst, event, ...)
+local function EventInterceptor(inst, event, ...)
     print(
         string.format(
             "[%s] [EVENT] [%s] %s",
-            GetFormattedTime(),
+            GetFormattedOsClock(),
             inst.prefab,
             event
         )
@@ -147,18 +148,18 @@ local function EventIntercepter(inst, event, ...)
 end
 
 local function AddEventInterception(ent)
-    ent.PushEvent = EventIntercepter
+    ent.PushEvent = EventInterceptor
     InterceptEntity[#InterceptEntity + 1] = ent
     for _, v in pairs(ent) do
         if type(v) == "table" and v.HasTag and v:HasTag("CLASSIFIED") then
-            v.PushEvent = EventIntercepter
+            v.PushEvent = EventInterceptor
             InterceptEntity[#InterceptEntity + 1] = v
         end
     end
     if ent.replica and ent.replica._ then
         for _, replica in pairs(ent.replica._) do
             if replica.classified then
-                replica.classified.PushEvent = EventIntercepter
+                replica.classified.PushEvent = EventInterceptor
                 InterceptEntity[#InterceptEntity + 1] = replica.classified
             end
         end
@@ -208,10 +209,8 @@ local function ManipulateTimeScale(newTimeScale)
     TimeScale = newTimeScale
     if TimeScale < 0 then
         TimeScale = 0
-        return
     elseif TimeScale > 4 then
         TimeScale = 4
-        return
     end
 end
 
@@ -409,7 +408,7 @@ local function PrintTagDelta(tags)
         print(
             string.format(
                 "[%s] [TAG] [%s] (%s)",
-                GetFormattedTime(),
+                GetFormattedOsClock(),
                 TagTrackerPrefab,
                 table.concat(deltaTags, ", ")
             )
@@ -574,10 +573,12 @@ end
 
 local function IsActionRPC(code)
     return code == 57
-        or code == 1
+        or code == RPC.ActionButton
+        or code == RPC.LeftClick
+        or code == RPC.RightClick
 end
 
-local function RPCServerIntercepter(...)
+local function RPCServerInterceptor(...)
     local t = {}
 
     local arg = {...}
@@ -591,12 +592,14 @@ local function RPCServerIntercepter(...)
         end
     end
 
-    print(
-        string.format(
-            "SendRPCToServer(%s)",
-            table.concat(t, ", ")
+    if arg[1] then -- and arg[1] ~= 37 then
+        print(
+            string.format(
+                "SendRPCToServer(%s)",
+                table.concat(t, ", ")
+            )
         )
-    )
+    end
 
     OldSendRPCToServer(...)
 end
@@ -604,8 +607,8 @@ end
 AddGameKey("RPC_SERVER_LISTENER", function()
     local str = "started"
 
-    if SendRPCToServer ~= RPCServerIntercepter then
-        SendRPCToServer = RPCServerIntercepter
+    if SendRPCToServer ~= RPCServerInterceptor then
+        SendRPCToServer = RPCServerInterceptor
     else
         str = "stopped"
         SendRPCToServer = OldSendRPCToServer
