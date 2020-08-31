@@ -333,8 +333,10 @@ local function GetTags(ent)
         local debugStr = ent:GetDebugString()
         local tagsStr = debugStr:match("Tags: ([%w_%s]+)Prefab:")
 
-        for tag in tagsStr:gmatch("[%l_]+") do
-            tags[#tags + 1] = tag
+        for tag in tagsStr:gmatch("[%w_]+") do
+            if tag ~= "FROMNUM" then
+                tags[#tags + 1] = tag
+            end
         end
     end
 
