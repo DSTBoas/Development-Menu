@@ -1,6 +1,7 @@
 local DevelopmentScreen = require "screens/development_menu"
 local PlayerNotifier = require "util/player_notifier"
-require "util/keyhandlers"
+local Threading = require "util/threading"
+local KeybindService = MOD_DEVELOPMENT_MENU.KEYBINDSERVICE
 
 local function ValidateFocusState()
     local activeScreen = TheFrontEnd:GetActiveScreen()
@@ -17,7 +18,11 @@ local function ValidateScreenState()
        and ValidateFocusState()
 end
 
-AddGlobalKey("TOGGLE_DEVELOPMENT_MENU", function()
+local function GetTreadName(str)
+    return str:gsub("_", " ")
+end
+
+KeybindService:AddGlobalKey("TOGGLE_DEVELOPMENT_MENU", function()
     local menu = TheFrontEnd:GetOpenScreenOfType("DevelopmentScreen")
 
     if menu == nil then
@@ -45,15 +50,19 @@ local function DeepSelect()
 
     SetDebugEntity(ent)
 
+    if ent and not TheSim:GetDebugRenderEnabled() then
+        TheSim:SetDebugRenderEnabled(true)
+    end
+
     return GetDebugEntity()
 end
 
-AddGlobalKey("SET_DEBUG_ENTITY", function()
+KeybindService:AddGlobalKey("SET_DEBUG_ENTITY", function()
     local ent = DeepSelect()
     if ent and type(ent) == "table" and ent.prefab then
         PlayerNotifier(
             string.format(
-                "Debug entity is %s.",
+                "Debug entity: %s",
                 ent.prefab
             )
         )
@@ -78,7 +87,7 @@ function DumpReplicasComponents(t)
     end
 end
 
-AddGlobalKey("DUMP_SELECT", function()
+KeybindService:AddGlobalKey("DUMP_SELECT", function()
     local ent = DeepSelect()
     if ent and type(ent) == "table" then
         if TheInput:IsKeyDown(KEY_CTRL) then
@@ -108,7 +117,7 @@ AddGlobalKey("DUMP_SELECT", function()
 end)
 
 local function ValidateEntity(ent)
-    return ent and type(ent) == "table" and ent.PushEvent
+    return ent and ent:IsValid()
 end
 
 local InterceptEntity = {}
@@ -166,7 +175,7 @@ local function AddEventInterception(ent)
     end
 end
 
-AddGameKey("EVENT_LISTEN_SELECT", function()
+KeybindService:AddKey("EVENT_LISTEN_SELECT", function()
     if not TheInput:IsKeyDown(KEY_CTRL) then
         local ent = DeepSelect()
         if ValidateEntity(ent) then
@@ -185,19 +194,21 @@ AddGameKey("EVENT_LISTEN_SELECT", function()
     end
 end)
 
-AddGlobalKey("CLEAR_CONSOLE", function()
-    for _ = 1, 19 do
-        nolineprint("")
+KeybindService:AddGlobalKey("CLEAR_CONSOLE", function()
+    if TheInput:IsKeyDown(KEY_SHIFT) then
+        for _ = 1, 19 do
+            nolineprint("")
+        end
+        nolineprint(string.rep("-", 15) .. "| Console Cleared |" .. string.rep("-", 15))
+        PlayerNotifier("Console log cleared.")
     end
-    nolineprint(string.rep("-", 15) .. "| Console Cleared |" .. string.rep("-", 15))
-    PlayerNotifier("Console log cleared.")
 end)
 
-AddGameKey("TOGGLE_GODMODE", function()
+KeybindService:AddKey("TOGGLE_GODMODE", function()
     TheNet:SendRemoteExecute("c_supergodmode()")
 end)
 
-AddGameKey("RESET_WORLD", function()
+KeybindService:AddKey("RESET_WORLD", function()
     if TheInput:IsKeyDown(KEY_CTRL) and TheInput:IsKeyDown(KEY_SHIFT) then
         TheNet:SendRemoteExecute("c_reset()")
     end
@@ -214,7 +225,7 @@ local function ManipulateTimeScale(newTimeScale)
     end
 end
 
-AddGameKey("DECREASE_TIME_SCALE", function()
+KeybindService:AddKey("DECREASE_TIME_SCALE", function()
     if TheInput:IsKeyDown(KEY_CTRL) then
         TheNet:SendRemoteExecute("TheSim:SetTimeScale(1)")
         ManipulateTimeScale(1)
@@ -233,7 +244,7 @@ AddGameKey("DECREASE_TIME_SCALE", function()
     )
 end)
 
-AddGameKey("INCREASE_TIME_SCALE", function()
+KeybindService:AddKey("INCREASE_TIME_SCALE", function()
     if TheInput:IsKeyDown(KEY_CTRL) then
         TheNet:SendRemoteExecute("TheSim:SetTimeScale(1)")
         ManipulateTimeScale(1)
@@ -280,7 +291,7 @@ local function GetNextPhase()
     return phase
 end
 
-AddGameKey("NEXT_PHASE", function()
+KeybindService:AddKey("NEXT_PHASE", function()
     TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_nextphase")]])
     PlayerNotifier(
         string.format(
@@ -290,7 +301,7 @@ AddGameKey("NEXT_PHASE", function()
     )
 end)
 
-AddGameKey("FORCE_RAIN", function()
+KeybindService:AddKey("FORCE_RAIN", function()
     local state = "stopped"
 
     if TheInput:IsKeyDown(KEY_CTRL) then
@@ -308,7 +319,7 @@ AddGameKey("FORCE_RAIN", function()
     )
 end)
 
-AddGameKey("CHANGE_DAMAGE_MULTIPLIER", function()
+KeybindService:AddKey("CHANGE_DAMAGE_MULTIPLIER", function()
     local mult = 1
 
     if TheInput:IsKeyDown(KEY_CTRL) then
@@ -330,8 +341,7 @@ local function GetTags(ent)
     local tags = {}
 
     if ent and ent.GetDebugString then
-        local debugStr = ent:GetDebugString()
-        local tagsStr = debugStr:match("Tags: ([%w_%s]+)Prefab:")
+        local tagsStr = ent:GetDebugString():match("Tags: ([%w_%s]+)Prefab:") or ""
 
         for tag in tagsStr:gmatch("[%w_]+") do
             if tag ~= "FROMNUM" then
@@ -343,11 +353,6 @@ local function GetTags(ent)
     return tags
 end
 
-local TagTrackerTags = {}
-local TagTrackerPrefab = "MISSING"
-local TagTrackerTask
-local TagTrackerEnt
-
 local function TableContains(tab, tag)
     for i = 1, #tab do
         if tab[i] == tag then
@@ -358,25 +363,25 @@ local function TableContains(tab, tag)
     return false
 end
 
-local function PrintDeltaTags(tab, deltaTab, str)
-    for i = 1, #deltaTab do
-        if TableContains(tab, deltaTab[i]) == false then
-            print(
-                string.format(
-                    str,
-                    TagTrackerPrefab,
-                    deltaTab[i]
-                )
-            )
-        end
-    end
-end
+-- local function PrintDeltaTags(tab, deltaTab, str)
+--     for i = 1, #deltaTab do
+--         if TableContains(tab, deltaTab[i]) == false then
+--             print(
+--                 string.format(
+--                     str,
+--                     TagTrackerPrefab,
+--                     deltaTab[i]
+--                 )
+--             )
+--         end
+--     end
+-- end
 
 local function GetTagDeltas(tab, deltaTab, str)
     local t = {}
 
     for i = 1, #deltaTab do
-        if TableContains(tab, deltaTab[i]) == false then
+        if not TableContains(tab, deltaTab[i]) then
             t[#t + 1] = str .. deltaTab[i] 
         end
     end
@@ -397,8 +402,9 @@ local function MergeTables(...)
     return t
 end
 
-local function PrintTagDelta(tags)
-    local newTags = GetTags(TagTrackerEnt)
+local TagTrackerTags = {}
+local function PrintTagDelta(ent, tags)
+    local newTags = GetTags(ent)
 
     local addedTags = GetTagDeltas(tags, newTags, "++")
     local removedTags = GetTagDeltas(newTags, tags, "--")
@@ -409,7 +415,7 @@ local function PrintTagDelta(tags)
             string.format(
                 "[%s] [TAG] [%s] (%s)",
                 GetFormattedOsClock(),
-                TagTrackerPrefab,
+                ent.prefab,
                 table.concat(deltaTags, ", ")
             )
         )
@@ -421,61 +427,53 @@ local function PrintTagDelta(tags)
     TagTrackerTags = newTags
 end
 
-local function EndTagThread(silent)
-    TagTrackerEnt = nil
-    TagTrackerTags = {}
-    if TagTrackerTask then
-        scheduler:KillTask(TagTrackerTask)
-    end
-    TagTrackerTask = nil
-    if not silent then
-        PlayerNotifier(
-            string.format(
-                "%s's tag tracking stopped.",
-                TagTrackerPrefab
-            )
+local function DefaultThreadToggle(ent, thread, status)
+    PlayerNotifier(
+        string.format(
+            "%s's %s %s.",
+            ent.prefab,
+            GetTreadName(thread),
+            status
         )
-    end
-    TagTrackerPrefab = "MISSING"
+    )
 end
 
-local function StartTagThread()
-    while TagTrackerEnt:IsValid() do
-        PrintTagDelta(TagTrackerTags)
-        Sleep(0)
-    end
+local TagsThread =
+{
+    ID = "tags_thread",
+    Thread = nil
+}
 
-    TagTrackerTask = nil
-    EndTagThread()
-end
-
-AddGameKey("TAG_DELTAS_TRACKER", function()
-    if TheInput:IsKeyDown(KEY_CTRL) then
-        return TagTrackerTask and EndTagThread()
+KeybindService:AddKey("TAG_DELTAS_TRACKER", function()
+    if TheInput:IsKeyDown(KEY_CTRL) and TagsThread.Thread then
+        TagsThread.Thread = nil
+        return
     end
 
     local ent = DeepSelect()
-    if ValidateEntity(ent) and ent.prefab then
-        EndTagThread(true)
-        TagTrackerEnt = ent
-        TagTrackerPrefab = ent.prefab
+    if ValidateEntity(ent) and ent.AnimState then
+
+        if TagsThread.Thread then
+            Threading:StopThread(TagsThread.ID)
+        end
+
         TagTrackerTags = GetTags(ent)
-        TagTrackerTask = ThePlayer:StartThread(StartTagThread)
-        PlayerNotifier(
-            string.format(
-                "%s started tracking tag deltas.",
-                TagTrackerPrefab
-            )
-        )
-        -- print("local tags = {" .. table.concat(TagTrackerTags,", ") .. "}")
+        TagsThread.Thread = Threading:StartThread(TagsThread.ID, function()
+            PrintTagDelta(ent, TagTrackerTags)
+            Sleep(FRAMES)
+        end,
+        function()
+            return ent:IsValid() and TagsThread.Thread
+        end,
+        function()
+            DefaultThreadToggle(ent, TagsThread.ID, "stopped")
+        end)
+
+        DefaultThreadToggle(ent, TagsThread.ID, "started")
     end
 end)
 
-local AnimationEntityPrefab = "MISSING"
-local AnimationEntity
-local AnimationTask
-
-local function GetAnimationDebugString(ent)
+local function PrintAnimationDebug(ent)
     local debugString = ent:GetDebugString()
 
     -- Credit for the regex goes to @Victor | Steam handle: DemonBlink
@@ -485,65 +483,51 @@ local function GetAnimationDebugString(ent)
     local loopCount = math.floor(animFrame / animTotalFrames)
     animFrame = animFrame % animTotalFrames
 
-    local str = string.format(
-                    "[%s] Animation: (%s) Frame: (%s/%s) Loops: (%s)",
-                    AnimationEntityPrefab,
-                    anim,
-                    animFrame,
-                    animTotalFrames,
-                    loopCount
-                )
-    return str
-end
-
-local function EndAnimationThread(silent)
-    AnimationEntity = nil
-    if AnimationTask then
-        scheduler:KillTask(AnimationTask)
-    end
-    AnimationTask = nil
-    if not silent then
-        PlayerNotifier(
-            string.format(
-                "%s's animation tracking stopped.",
-                AnimationEntityPrefab
-            )
+    print(
+        string.format(
+            "[%s] Animation: (%s) Frame: (%s/%s) Loops: (%s)",
+            ent.prefab,
+            anim,
+            animFrame,
+            animTotalFrames,
+            loopCount
         )
-    end
-    AnimationEntityPrefab = "MISSING"
+    )
 end
 
-local function StartAnimationThread()
-    while AnimationEntity and AnimationEntity:IsValid() and AnimationEntity.AnimState do
-        print(GetAnimationDebugString(AnimationEntity))
-        Sleep(0)
-    end
+local AnimationThread =
+{
+    ID = "animation_thread",
+    Thread = nil
+}
 
-    AnimationTask = nil
-    EndAnimationThread()
-end
-
-AddGameKey("ANIMATION_DELTAS_TRACKER", function()
-    if TheInput:IsKeyDown(KEY_CTRL) then
-        return AnimationTask and EndAnimationThread()
+KeybindService:AddKey("ANIMATION_DELTAS_TRACKER", function()
+    if TheInput:IsKeyDown(KEY_CTRL) and AnimationThread.Thread then
+        AnimationThread.Thread = nil
+        return
     end
 
     local ent = DeepSelect()
-    if ValidateEntity(ent) and ent.prefab and ent.AnimState then
-        EndAnimationThread(true)
-        AnimationEntity = ent
-        AnimationEntityPrefab = ent.prefab
-        AnimationTask = ThePlayer:StartThread(StartAnimationThread)
-        PlayerNotifier(
-            string.format(
-                "%s started animation tracking.",
-                AnimationEntityPrefab
-            )
-        )
+    if ValidateEntity(ent) and ent.AnimState then
+
+        if AnimationThread.Thread then
+            Threading:StopThread(AnimationThread.ID)
+        end
+
+        AnimationThread.Thread = Threading:StartThread(AnimationThread.ID, function()
+            PrintAnimationDebug(ent)
+            Sleep(FRAMES)
+        end,
+        function()
+            return ent:IsValid() and AnimationThread.Thread
+        end,
+        function()
+            DefaultThreadToggle(ent, AnimationThread.ID, "stopped")
+        end)
+
+        DefaultThreadToggle(ent, AnimationThread.ID, "started")
     end
 end)
-
-local OldSendRPCToServer = SendRPCToServer
 
 local function TranslateRPC(code)
     for name, rpcCode in pairs(RPC) do
@@ -571,13 +555,21 @@ local function TranslateAction(code)
     return code
 end
 
-local function IsActionRPC(code)
-    return code == 57
-        or code == RPC.ActionButton
-        or code == RPC.LeftClick
-        or code == RPC.RightClick
+-- local function IsActionRPC(code)
+--     return code == RPC.UseItemFromInvTile
+--         or code == RPC.ActionButton
+--         or code == RPC.LeftClick
+--         or code == RPC.RightClick
+-- end
+
+local function IsValidEnt(ent)
+    return ent
+       and type(ent) == "table"
+       and ent.IsValid
+       and ent:IsValid()
 end
 
+local OldSendRPCToServer = SendRPCToServer
 local function RPCServerInterceptor(...)
     local t = {}
 
@@ -585,14 +577,14 @@ local function RPCServerInterceptor(...)
     for i = 1, #arg do
         if i == 1 then
             t[#t + 1] = TranslateRPC(arg[1])
-        elseif i == 2 and (#arg == 11 or IsActionRPC(arg[1])) then
+        elseif i == 2 and (#arg >= 11 or IsValidEnt(arg[3])) then -- or IsActionRPC(arg[1])) then
             t[#t + 1] = TranslateAction(arg[2])
         else
             t[#t + 1] = tostring(arg[i])
         end
     end
 
-    if arg[1] then -- and arg[1] ~= 37 then
+    if #t > 0 then
         print(
             string.format(
                 "SendRPCToServer(%s)",
@@ -604,20 +596,28 @@ local function RPCServerInterceptor(...)
     OldSendRPCToServer(...)
 end
 
-AddGameKey("RPC_SERVER_LISTENER", function()
-    local str = "started"
+KeybindService:AddKey("RPC_SERVER_LISTENER", function()
+    local str = "Started"
 
     if SendRPCToServer ~= RPCServerInterceptor then
         SendRPCToServer = RPCServerInterceptor
     else
-        str = "stopped"
+        str = "Stopped"
         SendRPCToServer = OldSendRPCToServer
     end
 
     PlayerNotifier(
         string.format(
-            "RPC server %s listening.",
+            "%s listening to RPC requests.",
             str
         )
     )
+end)
+
+KeybindService:AddKey("STOP_THREADS", function()
+    SendRPCToServer = OldSendRPCToServer
+    RemoveEventInterception()
+    AnimationThread.Thread = nil
+    TagsThread.Thread = nil
+    PlayerNotifier("Stopped all threads.")
 end)

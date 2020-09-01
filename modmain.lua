@@ -7,9 +7,8 @@ _G = GLOBAL
 require = _G.require
 
 local MOD_DEVELOPMENT_MENU = {}
-MOD_DEVELOPMENT_MENU.MODNAME = modname
+MOD_DEVELOPMENT_MENU.KEYBINDSERVICE = require "util/keybindservice"(modname)
 _G.MOD_DEVELOPMENT_MENU = MOD_DEVELOPMENT_MENU
-
 require "keybinds"
 
 local Commands =
