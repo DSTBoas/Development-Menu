@@ -97,7 +97,7 @@ KeybindService:AddGlobalKey("DUMP_SELECT", function()
             if ent.prefab then
                 PlayerNotifier(
                     string.format(
-                        "%s's table dumped.",
+                        "%s's table dumped",
                         ent.prefab
                     )
                 )
@@ -107,7 +107,7 @@ KeybindService:AddGlobalKey("DUMP_SELECT", function()
             if ent.prefab then
                 PlayerNotifier(
                     string.format(
-                        "%s's components and replicas dumped.",
+                        "%s's components and replicas dumped",
                         ent.prefab
                     )
                 )
@@ -183,14 +183,14 @@ KeybindService:AddKey("EVENT_LISTEN_SELECT", function()
             AddEventInterception(ent)
             PlayerNotifier(
                 string.format(
-                    "Now listening to events from %s.",
+                    "Now listening to events from %s",
                     ent.prefab
                 )
             )
         end
     else
         RemoveEventInterception()
-        PlayerNotifier("Stopped listening to events.")
+        PlayerNotifier("Stopped listening to events")
     end
 end)
 
@@ -200,7 +200,7 @@ KeybindService:AddGlobalKey("CLEAR_CONSOLE", function()
             nolineprint("")
         end
         nolineprint(string.rep("-", 15) .. "| Console Cleared |" .. string.rep("-", 15))
-        PlayerNotifier("Console log cleared.")
+        PlayerNotifier("Console log cleared")
     end
 end)
 
@@ -238,7 +238,7 @@ KeybindService:AddKey("DECREASE_TIME_SCALE", function()
     end
     PlayerNotifier(
         string.format(
-            "Time scale is now %s.",
+            "Time scale is now %s",
             TimeScale
         )
     )
@@ -257,7 +257,7 @@ KeybindService:AddKey("INCREASE_TIME_SCALE", function()
     end
     PlayerNotifier(
         string.format(
-            "Time scale is now %s.",
+            "Time scale is now %s",
             TimeScale
         )
     )
@@ -295,7 +295,7 @@ KeybindService:AddKey("NEXT_PHASE", function()
     TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_nextphase")]])
     PlayerNotifier(
         string.format(
-            "Phase has changed to %s.",
+            "Phase has changed to %s",
             GetNextPhase()
         )
     )
@@ -313,7 +313,7 @@ KeybindService:AddKey("FORCE_RAIN", function()
 
     PlayerNotifier(
         string.format(
-            "Rain %s.",
+            "Rain %s",
             state
         )
     )
@@ -331,7 +331,7 @@ KeybindService:AddKey("CHANGE_DAMAGE_MULTIPLIER", function()
 
     PlayerNotifier(
         string.format(
-            "Damage multiplier is now %s.",
+            "Damage multiplier is now %s",
             mult
         )
     )
@@ -430,7 +430,7 @@ end
 local function DefaultThreadToggle(ent, thread, status)
     PlayerNotifier(
         string.format(
-            "%s's %s %s.",
+            "%s's %s %s",
             ent.prefab,
             GetTreadName(thread),
             status
@@ -555,19 +555,21 @@ local function TranslateAction(code)
     return code
 end
 
--- local function IsActionRPC(code)
---     return code == RPC.UseItemFromInvTile
---         or code == RPC.ActionButton
---         or code == RPC.LeftClick
---         or code == RPC.RightClick
--- end
 
-local function IsValidEnt(ent)
-    return ent
-       and type(ent) == "table"
-       and ent.IsValid
-       and ent:IsValid()
+-- @TODO find a better way to detect rpc type
+local function IsActionRPC(code)
+    return code == RPC.UseItemFromInvTile
+        or code == RPC.ActionButton
+        or code == RPC.LeftClick
+        or code == RPC.RightClick
 end
+
+-- local function IsValidEnt(ent)
+--     return ent
+--        and type(ent) == "table"
+--        and ent.IsValid
+--        and ent:IsValid()
+-- end
 
 local OldSendRPCToServer = SendRPCToServer
 local function RPCServerInterceptor(...)
@@ -577,7 +579,7 @@ local function RPCServerInterceptor(...)
     for i = 1, #arg do
         if i == 1 then
             t[#t + 1] = TranslateRPC(arg[1])
-        elseif i == 2 and (#arg >= 11 or IsValidEnt(arg[3])) then -- or IsActionRPC(arg[1])) then
+        elseif i == 2 and (#arg >= 11 or IsActionRPC(arg[1])) then -- or IsValidEnt(arg[3])) then
             t[#t + 1] = TranslateAction(arg[2])
         else
             t[#t + 1] = tostring(arg[i])
@@ -608,7 +610,7 @@ KeybindService:AddKey("RPC_SERVER_LISTENER", function()
 
     PlayerNotifier(
         string.format(
-            "%s listening to RPC requests.",
+            "%s listening to RPC requests",
             str
         )
     )
@@ -619,5 +621,5 @@ KeybindService:AddKey("STOP_THREADS", function()
     RemoveEventInterception()
     AnimationThread.Thread = nil
     TagsThread.Thread = nil
-    PlayerNotifier("Stopped all threads.")
+    PlayerNotifier("Stopped all threads")
 end)
