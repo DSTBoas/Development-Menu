@@ -508,18 +508,12 @@ local function RPCServerInterceptor(...)
 end
 
 KeybindService:AddKey("RPC_SERVER_LISTENER", function()
-    local str = "Started"
-
-    if SendRPCToServer ~= RPCServerInterceptor then
-        SendRPCToServer = RPCServerInterceptor
-    else
-        str = "Stopped"
-        SendRPCToServer = OldSendRPCToServer
-    end
-
+    SendRPCToServer = SendRPCToServer == OldSendRPCToServer and RPCServerInterceptor
+                      or OldSendRPCToServer
     NotifyFormatted(
         "%s listening to RPC requests",
-        str
+        SendRPCToServer == RPCServerInterceptor and "Started"
+        or "Stopped"
     )
 end)
 
