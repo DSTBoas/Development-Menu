@@ -77,7 +77,7 @@ KeybindService:AddGlobalKey("SET_DEBUG_ENTITY", function()
     end
 end)
 
-local function DumpReplicasComponents(t)
+local function DumpReplicasComponents(ent)
     local t = {}
 
     t[#t + 1] = string.rep("-", 15) .. "| Dumping ent |" .. string.rep("-", 15)
