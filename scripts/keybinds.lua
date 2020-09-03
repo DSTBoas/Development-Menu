@@ -218,6 +218,7 @@ local function ManipulateTimeScale(newTimeScale)
             TimeScale
         )
     )
+    NotifyFormatted("Time scale set to %s", TimeScale)
 end
 
 KeybindService:AddKey("DECREASE_TIME_SCALE", function()
@@ -228,8 +229,6 @@ KeybindService:AddKey("DECREASE_TIME_SCALE", function()
     else
         ManipulateTimeScale(TimeScale - .25)
     end
-
-    NotifyFormatted("Time scale set to %s", TimeScale)
 end)
 
 KeybindService:AddKey("INCREASE_TIME_SCALE", function()
@@ -240,8 +239,6 @@ KeybindService:AddKey("INCREASE_TIME_SCALE", function()
     else
         ManipulateTimeScale(TimeScale + .25)
     end
-
-    NotifyFormatted("Time scale set to %s", TimeScale)
 end)
 
 local PHASE_NAMES =
