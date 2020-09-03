@@ -77,31 +77,38 @@ KeybindService:AddGlobalKey("SET_DEBUG_ENTITY", function()
     end
 end)
 
-function DumpReplicasComponents(t)
-    print(string.rep("-", 15) .. "| Dumping ent |" .. string.rep("-", 15))
+local function DumpReplicasComponents(t)
+    local t = {}
 
-    print("Components:")
-    if t.components then
-        for i, v in pairs(t.components) do
-            print("\t"..i, v)
+    t[#t + 1] = string.rep("-", 15) .. "| Dumping ent |" .. string.rep("-", 15)
+    t[#t + 1] = "Components:"
+    if ent.components then
+        for i, v in pairs(ent.components) do
+            t[#t + 1] = "\t" .. i .. tostring(v)
+        end
+    end
+    t[#t + 1] = "Replica:"
+    if ent.replica then
+        for i, v in pairs(ent.replica._) do
+            t[#t + 1] = "\t" .. i .. tostring(v)
         end
     end
 
-    print("Replica:")
-    if t.replica then
-        for i, v in pairs(t.replica["_"]) do
-            print("\t"..i, v)
-        end
-    end
+    print(table.concat(t, "\n"))
 end
 
 KeybindService:AddGlobalKey("DUMP_SELECT", function()
     local ent = DeepSelect()
     if checkentity(ent) then
         if TheInput:IsKeyDown(KEY_CTRL) then
-            for i,v in pairs(ent) do
-                print(i,v)
+            local t = {}
+
+            for i, v in pairs(ent) do
+                t[#t + 1] = i .. " " .. tostring(v)
             end
+
+            print(table.concat(t, "\n"))
+
             if ent.prefab then
                 NotifyFormatted("%s's table dumped", ent.prefab)
             end
