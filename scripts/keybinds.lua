@@ -212,17 +212,20 @@ end)
 local TimeScale = 1
 local function ManipulateTimeScale(newTimeScale)
     TimeScale = math.clamp(newTimeScale, 0, 4)
+    TheNet:SendRemoteExecute(
+        Format(
+            "TheSim:SetTimeScale(%s)",
+            TimeScale
+        )
+    )
 end
 
 KeybindService:AddKey("DECREASE_TIME_SCALE", function()
     if TheInput:IsKeyDown(KEY_CTRL) then
-        TheNet:SendRemoteExecute("TheSim:SetTimeScale(1)")
         ManipulateTimeScale(1)
     elseif TheInput:IsKeyDown(KEY_SHIFT) then
-        TheNet:SendRemoteExecute("TheSim:SetTimeScale(0)")
         ManipulateTimeScale(0)
     else
-        TheNet:SendRemoteExecute("TheSim:SetTimeScale(TheSim:GetTimeScale() - .25)")
         ManipulateTimeScale(TimeScale - .25)
     end
 
@@ -231,13 +234,10 @@ end)
 
 KeybindService:AddKey("INCREASE_TIME_SCALE", function()
     if TheInput:IsKeyDown(KEY_CTRL) then
-        TheNet:SendRemoteExecute("TheSim:SetTimeScale(1)")
         ManipulateTimeScale(1)
     elseif TheInput:IsKeyDown(KEY_SHIFT) then
-        TheNet:SendRemoteExecute("TheSim:SetTimeScale(4)")
         ManipulateTimeScale(4)
     else
-        TheNet:SendRemoteExecute("TheSim:SetTimeScale(TheSim:GetTimeScale() + .25)")
         ManipulateTimeScale(TimeScale + .25)
     end
 
