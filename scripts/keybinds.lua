@@ -288,16 +288,12 @@ KeybindService:AddKey("FORCE_RAIN", function()
 end)
 
 KeybindService:AddKey("CHANGE_DAMAGE_MULTIPLIER", function()
-    local mult = 1
+    local dmgMult = TheInput:IsKeyDown(KEY_CTRL) and 999
+                 or 1
 
-    if TheInput:IsKeyDown(KEY_CTRL) then
-        mult = 9999
-        TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier=" .. mult)
-    else
-        TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier=" .. mult)
-    end
+    TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier=" .. dmgMult)
 
-    NotifyFormatted("Damage multiplier set to %s", mult)
+    NotifyFormatted("Damage multiplier set to %s", dmgMult)
 end)
 
 local function GetTags(ent)
