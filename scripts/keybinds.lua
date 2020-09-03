@@ -18,7 +18,7 @@ local function ValidateScreenState()
        and ValidateFocusState()
 end
 
-local function GetTreadName(str)
+local function GetThreadName(str)
     return str:gsub("_", " ")
 end
 
@@ -351,7 +351,7 @@ local function DefaultThreadToggle(ent, thread, status)
     NotifyFormatted(
         "%s's %s %s",
         ent.prefab,
-        GetTreadName(thread),
+        GetThreadName(thread),
         status
     )
 end
@@ -478,13 +478,13 @@ local ActionRPCs =
     [RPC.RightClick] = true;
 }
 
--- @TODO find a better way to detect RPC type
+-- @TODO Find a better way to detect RPC type
 -- One method is scraping the RPC_HANDLERS and include any RPC with an Action arg
 local function IsActionRPC(code)
     return ActionRPCs[code]
 end
 
--- @TODO Also translate Recipe and Control codes
+-- @TODO Translate Recipe and Control codes
 local OldSendRPCToServer = SendRPCToServer
 local function RPCServerInterceptor(...)
     local t = {}
