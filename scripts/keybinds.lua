@@ -295,9 +295,9 @@ KeybindService:AddKey("CHANGE_DAMAGE_MULTIPLIER", function()
 
     if TheInput:IsKeyDown(KEY_CTRL) then
         mult = 9999
-        TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier="..mult)
+        TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier=" .. mult)
     else
-        TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier="..mult)
+        TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier=" .. mult)
     end
 
     NotifyFormatted("Damage multiplier set to %s", mult)
