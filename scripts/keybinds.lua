@@ -115,7 +115,7 @@ KeybindService:AddGlobalKey("DUMP_SELECT", function()
 end)
 
 local function ValidateEntity(ent)
-    return ent and ent:IsValid()
+    return checkentity(ent) and ent:IsValid()
 end
 
 local EventInterceptorsEntities = {}
