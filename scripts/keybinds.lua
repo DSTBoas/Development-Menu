@@ -374,9 +374,9 @@ KeybindService:AddKey("TAG_DELTAS_TRACKER", function()
             Threading:StopThread(TagsThread.ID)
         end
 
-        local SavedEnityTags = GetTags(ent)
+        local SavedEntityTags = GetTags(ent)
         TagsThread.Thread = Threading:StartThread(TagsThread.ID, function()
-            SavedEnityTags = PrintTagDeltas(ent, SavedEnityTags)
+            SavedEntityTags = PrintTagDeltas(ent, SavedEntityTags)
             Sleep(FRAMES)
         end,
         function()
