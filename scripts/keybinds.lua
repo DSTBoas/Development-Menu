@@ -72,7 +72,7 @@ end
 
 KeybindService:AddGlobalKey("SET_DEBUG_ENTITY", function()
     local ent = DeepSelect()
-    if ent and type(ent) == "table" and ent.prefab then
+    if checkentity(ent) and ent.prefab then
         NotifyFormatted("Debug entity: %s", ent.prefab)
     end
 end)
@@ -97,7 +97,7 @@ end
 
 KeybindService:AddGlobalKey("DUMP_SELECT", function()
     local ent = DeepSelect()
-    if ent and type(ent) == "table" then
+    if checkentity(ent) then
         if TheInput:IsKeyDown(KEY_CTRL) then
             for i,v in pairs(ent) do
                 print(i,v)
@@ -159,7 +159,7 @@ local function AttachEventInterceptors(ent)
     ent.PushEvent = EventInterceptor
     EventInterceptorsEntities[#EventInterceptorsEntities + 1] = ent
     for _, v in pairs(ent) do
-        if type(v) == "table" and v.HasTag and v:HasTag("CLASSIFIED") then
+        if checkentity(ent) and v.HasTag and v:HasTag("CLASSIFIED") then
             v.PushEvent = EventInterceptor
             EventInterceptorsEntities[#EventInterceptorsEntities + 1] = v
         end
