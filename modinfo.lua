@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.41"
+version = "0.42"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -257,7 +257,7 @@ configuration_options =
         AssignKeyMessage
     ),
     AddConfig(
-        "RPC server sniffer",
+        "RPC traffic monitor",
         "RPC_SERVER_LISTENER",
         KeyboardOptions,
         "KEY_F6",
@@ -292,6 +292,30 @@ configuration_options =
         KeyboardOptions,
         "KEY_F10",
         AssignKeyMessage
+    ),
+
+
+    AddSectionTitle("RPC"),
+    AddConfig(
+        "Translate action codes",
+        "TRANSLATE_ACTION",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        "Translate control codes",
+        "TRANSLATE_CONTROL",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        "Translate recipe codes",
+        "TRANSLATE_RECIPE",
+        SettingOptions,
+        false,
+        SettingMessage
     ),
 
 

@@ -80,17 +80,19 @@ end)
 local function DumpReplicasComponents(ent)
     local t = {}
 
-    t[#t + 1] = string.rep("-", 15) .. "| Dumping ent |" .. string.rep("-", 15)
+    t[#t + 1] = string.rep("-", 10) .. "| Components & Replica (" .. ent.prefab ..  ") |" .. string.rep("-", 10)
+
     t[#t + 1] = "Components:"
     if ent.components then
-        for i, v in pairs(ent.components) do
-            t[#t + 1] = "\t" .. i .. tostring(v)
+        for component in pairs(ent.components) do
+            t[#t + 1] = "\t" .. component
         end
     end
+
     t[#t + 1] = "Replica:"
     if ent.replica then
-        for i, v in pairs(ent.replica._) do
-            t[#t + 1] = "\t" .. i .. tostring(v)
+        for replica in pairs(ent.replica._) do
+            t[#t + 1] = "\t" .. replica
         end
     end
 
@@ -101,22 +103,14 @@ KeybindService:AddGlobalKey("DUMP_SELECT", function()
     local ent = DeepSelect()
     if checkentity(ent) then
         if TheInput:IsKeyDown(KEY_CTRL) then
-            local t = {}
-
-            for i, v in pairs(ent) do
-                t[#t + 1] = i .. " " .. tostring(v)
+            print("Table dump " .. ent.prefab)
+            for i,v in pairs(ent) do
+                print(i,v)
             end
-
-            print(table.concat(t, "\n"))
-
-            if ent.prefab then
-                NotifyFormatted("%s's table dumped", ent.prefab)
-            end
+            NotifyFormatted("%s's table dumped", ent.prefab)
         else
             DumpReplicasComponents(ent)
-            if ent.prefab then
-                NotifyFormatted("%s's components and replicas dumped", ent.prefab)
-            end
+            NotifyFormatted("%s's components & replicas dumped", ent.prefab)
         end
     end
 end)
@@ -198,10 +192,16 @@ end)
 
 KeybindService:AddGlobalKey("CLEAR_CONSOLE", function()
     if TheInput:IsKeyDown(KEY_SHIFT) then
+        -- local consoleOutputList = GetConsoleOutputList()
+
+        -- for i = 1, #consoleOutputList do
+        --     consoleOutputList[i] = nil
+        -- end
         for _ = 1, 19 do
             nolineprint("")
         end
         nolineprint(string.rep("-", 15) .. "| Console Cleared |" .. string.rep("-", 15))
+
         Notify("Console log cleared")
     end
 end)
@@ -464,6 +464,36 @@ local function GetActionNameFromCode(code)
     return code
 end
 
+local function GetRecipeNameFromCode(code)
+    for recipe, recipeData in pairs(AllRecipes) do
+        if recipeData.rpc_id == code then
+            return code .. " - " .. recipe
+        end
+    end
+
+    return code
+end
+
+local CONTROLS = {}
+local function GetControlFromCode(code)
+    return CONTROLS[code] or code
+end
+
+for name, val in pairs(_G) do
+    if type(name) == "string" and name:sub(1,8) == "CONTROL_" then
+        CONTROLS[val] = name
+    end
+end
+
+local ControlRPCs =
+{
+    [RPC.StopControl] = true;
+}
+
+local function IsControlRPC(code)
+    return ControlRPCs[code]
+end
+
 local ActionRPCs =
 {
     [RPC.ControllerUseItemOnSelfFromInvTile] = true;
@@ -479,12 +509,45 @@ local ActionRPCs =
 }
 
 -- @TODO Find a better way to detect RPC type
--- One method is scraping the RPC_HANDLERS and include any RPC with an Action arg
 local function IsActionRPC(code)
     return ActionRPCs[code]
 end
 
--- @TODO Translate Recipe and Control codes
+local RecipeRPCs =
+{
+    [RPC.MakeRecipeFromMenu] = true;
+    [RPC.MakeRecipeAtPoint] = true;
+    [RPC.BufferBuild] = true;
+}
+
+local function IsRecipeRPC(code)
+    return RecipeRPCs[code]
+end
+
+local RPCTranslators = {}
+
+if GetModConfigData("TRANSLATE_ACTION", MOD_DEVELOPMENT_MENU.MODNAME) then
+    RPCTranslators[IsActionRPC] = GetActionNameFromCode 
+end
+
+if GetModConfigData("TRANSLATE_RECIPE", MOD_DEVELOPMENT_MENU.MODNAME) then
+    RPCTranslators[IsRecipeRPC] = GetRecipeNameFromCode 
+end
+
+if GetModConfigData("TRANSLATE_CONTROL", MOD_DEVELOPMENT_MENU.MODNAME) then
+    RPCTranslators[IsControlRPC] = GetControlFromCode 
+end
+
+local function TranslateCode(arg1, arg2)
+    for trigger, getName in pairs(RPCTranslators) do
+        if trigger(arg1) then
+            return getName(arg2)
+        end
+    end
+
+    return nil
+end
+
 local OldSendRPCToServer = SendRPCToServer
 local function RPCServerInterceptor(...)
     local t = {}
@@ -493,8 +556,8 @@ local function RPCServerInterceptor(...)
     for i = 1, #arg do
         if i == 1 then
             t[#t + 1] = GetRPCNameFromCode(arg[1])
-        elseif i == 2 and IsActionRPC(arg[1]) then
-            t[#t + 1] = GetActionNameFromCode(arg[2])
+        elseif i == 2 and TranslateCode(arg[1], arg[i])then
+            t[#t + 1] = TranslateCode(arg[1], arg[i])
         else
             t[#t + 1] = tostring(arg[i])
         end
@@ -514,9 +577,9 @@ KeybindService:AddKey("RPC_SERVER_LISTENER", function()
     SendRPCToServer = SendRPCToServer == OldSendRPCToServer and RPCServerInterceptor
                       or OldSendRPCToServer
     NotifyFormatted(
-        "%s listening to RPC requests",
-        SendRPCToServer == RPCServerInterceptor and "Started"
-        or "Stopped"
+        "RPC monitor: %s",
+        SendRPCToServer == RPCServerInterceptor and "Enabled"
+        or "Disabled"
     )
 end)
 
