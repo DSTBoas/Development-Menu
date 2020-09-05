@@ -413,7 +413,7 @@ local function PrintAnimationDebug(ent)
     PrintFormatted(
         "[%s] Animation: (%s) Frame: (%s/%s) Loops: (%s)",
         ent.prefab,
-        animationName,
+        animation,
         animationTimeInFrames,
         animationLengthInFrames,
         totalAnimationLoops
