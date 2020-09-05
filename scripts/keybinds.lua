@@ -160,7 +160,7 @@ local function AttachEventInterceptors(ent)
     ent.PushEvent = EventInterceptor
     EventInterceptorsEntities[#EventInterceptorsEntities + 1] = ent
     for _, v in pairs(ent) do
-        if checkentity(ent) and v.HasTag and v:HasTag("CLASSIFIED") then
+        if checkentity(v) and v.HasTag and v:HasTag("CLASSIFIED") then
             v.PushEvent = EventInterceptor
             EventInterceptorsEntities[#EventInterceptorsEntities + 1] = v
         end
@@ -191,7 +191,7 @@ KeybindService:AddKey("EVENT_LISTEN_SELECT", function()
 end)
 
 KeybindService:AddGlobalKey("CLEAR_CONSOLE", function()
-    if TheInput:IsKeyDown(KEY_SHIFT) then
+    if not TheInput:IsKeyDown(KEY_CTRL) then
         -- local consoleOutputList = GetConsoleOutputList()
 
         -- for i = 1, #consoleOutputList do
@@ -390,23 +390,33 @@ KeybindService:AddKey("TAG_DELTAS_TRACKER", function()
     end
 end)
 
-local function PrintAnimationDebug(ent)
-    local debugString = ent:GetDebugString()
+local function GetAnimation(ent)
+           -- Credit for the regex goes to @Victor | Steam handle: DemonBlink
+    return string.match(ent:GetDebugString(), "AnimState:.*anim:%s+(%S+)")
+end
 
-    -- Credit for the regex goes to @Victor | Steam handle: DemonBlink
-    local anim = string.match(debugString, "AnimState:.*anim:%s+(%S+)")
-    local animTotalFrames = math.floor(ent.AnimState:GetCurrentAnimationLength() * 30)
-    local animFrame = math.floor(ent.AnimState:GetCurrentAnimationTime() * 30) 
-    local loopCount = math.floor(animFrame / animTotalFrames)
-    animFrame = animFrame % animTotalFrames
+local function GetAnimationLengthInFrames(ent)
+    return math.floor(ent.AnimState:GetCurrentAnimationLength() * 30)
+end
+
+local function GetAnimationTimeInFrames(ent)
+    return math.floor(ent.AnimState:GetCurrentAnimationTime() * 30)
+end
+
+local function PrintAnimationDebug(ent)
+    local animation = GetAnimation(ent)
+    local animationTimeInFrames = GetAnimationTimeInFrames(ent)
+    local animationLengthInFrames = GetAnimationLengthInFrames(ent)
+    local totalAnimationLoops = math.floor(animationTimeInFrames / animationLengthInFrames)
+    animationTimeInFrames = animationTimeInFrames % animationLengthInFrames
 
     PrintFormatted(
         "[%s] Animation: (%s) Frame: (%s/%s) Loops: (%s)",
         ent.prefab,
-        anim,
-        animFrame,
-        animTotalFrames,
-        loopCount
+        animationName,
+        animationTimeInFrames,
+        animationLengthInFrames,
+        totalAnimationLoops
     )
 end
 
@@ -415,7 +425,6 @@ local AnimationThread =
     ID = "animation_thread",
     Thread = nil
 }
-
 KeybindService:AddKey("ANIMATION_DELTAS_TRACKER", function()
     if TheInput:IsKeyDown(KEY_CTRL) then
         AnimationThread.Thread = nil
@@ -429,18 +438,43 @@ KeybindService:AddKey("ANIMATION_DELTAS_TRACKER", function()
             Threading:StopThread(AnimationThread.ID)
         end
 
-        AnimationThread.Thread = Threading:StartThread(AnimationThread.ID, function()
-            PrintAnimationDebug(ent)
-            Sleep(FRAMES)
-        end,
-        function()
-            return ent:IsValid() and AnimationThread.Thread
-        end,
-        function()
-            DefaultThreadToggle(ent, AnimationThread.ID, "stopped")
-        end)
+        if TheInput:IsKeyDown(KEY_SHIFT) then
+            local oldAnim = GetAnimation(ent)
+            local currentAnim
+            AnimationThread.Thread = Threading:StartThread(AnimationThread.ID, function()
+                currentAnim = GetAnimation(ent)
+                if currentAnim ~= oldAnim then
+                    PrintFormatted(
+                        "[%s] Animation Delta: (%s)",
+                         ent.prefab,
+                         currentAnim
+                    )
+                    oldAnim = currentAnim
+                end
+                Sleep(FRAMES)
+            end,
+            function()
+                return ent:IsValid() and AnimationThread.Thread
+            end,
+            function()
+                DefaultThreadToggle(ent, AnimationThread.ID, "stopped")
+            end)
 
-        DefaultThreadToggle(ent, AnimationThread.ID, "started")
+            DefaultThreadToggle(ent, AnimationThread.ID, "started | Mode: Deltas")
+        else
+            AnimationThread.Thread = Threading:StartThread(AnimationThread.ID, function()
+                PrintAnimationDebug(ent)
+                Sleep(FRAMES)
+            end,
+            function()
+                return ent:IsValid() and AnimationThread.Thread
+            end,
+            function()
+                DefaultThreadToggle(ent, AnimationThread.ID, "stopped")
+            end)
+
+            DefaultThreadToggle(ent, AnimationThread.ID, "started | Mode: Default")
+        end
     end
 end)
 

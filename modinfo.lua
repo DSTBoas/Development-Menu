@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.42"
+version = "0.44"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -295,7 +295,7 @@ configuration_options =
     ),
 
 
-    AddSectionTitle("RPC"),
+    AddSectionTitle("RPC Monitor"),
     AddConfig(
         "Translate action codes",
         "TRANSLATE_ACTION",
