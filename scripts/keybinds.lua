@@ -147,6 +147,7 @@ local function GetFormattedOsClock()
 end
 
 local function EventInterceptor(inst, event, ...)
+
     PrintFormatted(
         "[%s] [EVENT] [%s] %s",
         GetFormattedOsClock(),
@@ -156,19 +157,50 @@ local function EventInterceptor(inst, event, ...)
     EntityScript.PushEvent(inst, event, ...)
 end
 
-local function AttachEventInterceptors(ent)
-    ent.PushEvent = EventInterceptor
+local FilteredEvents =
+{
+    -- MouseOver
+    mouseover = true;
+    mouseout = true;
+
+    -- Sound
+    sharksounddirty = true;
+
+    -- Talking
+    ontalk = true;
+    donetalking = true;
+
+    -- Ticks
+    clocktick = true;
+    temperaturetick = true;
+    weathertick = true;
+    overridecolourmodifier = true;
+}
+local function FilteredEventInterceptor(inst, event, ...)
+    if not FilteredEvents[event] then
+        PrintFormatted(
+            "[%s] [EVENT] [%s] %s",
+            GetFormattedOsClock(),
+            inst.prefab,
+            event
+        )
+    end
+    EntityScript.PushEvent(inst, event, ...)
+end
+
+local function AttachEventInterceptors(ent, interceptor)
+    ent.PushEvent = interceptor
     EventInterceptorsEntities[#EventInterceptorsEntities + 1] = ent
     for _, v in pairs(ent) do
         if checkentity(v) and v.HasTag and v:HasTag("CLASSIFIED") then
-            v.PushEvent = EventInterceptor
+            v.PushEvent = interceptor
             EventInterceptorsEntities[#EventInterceptorsEntities + 1] = v
         end
     end
     if ent.replica and ent.replica._ then
         for _, replica in pairs(ent.replica._) do
             if replica.classified then
-                replica.classified.PushEvent = EventInterceptor
+                replica.classified.PushEvent = interceptor
                 EventInterceptorsEntities[#EventInterceptorsEntities + 1] = replica.classified
             end
         end
@@ -184,9 +216,15 @@ KeybindService:AddKey("EVENT_LISTEN_SELECT", function()
 
     local ent = DeepSelect()
     if ValidateEntity(ent) then
+        local interceptor = EventInterceptor
+        local mode = "Default"
+        if TheInput:IsKeyDown(KEY_SHIFT) then
+            interceptor = FilteredEventInterceptor
+            mode = "Filtered"
+        end
         DetachEventInterceptors()
-        AttachEventInterceptors(ent)
-        NotifyFormatted("Now listening to events from %s", ent.prefab)
+        AttachEventInterceptors(ent, interceptor)
+        NotifyFormatted("Now listening to events from %s | Mode: %s", ent.prefab, mode)
     end
 end)
 
