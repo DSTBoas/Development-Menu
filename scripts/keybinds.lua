@@ -1,5 +1,6 @@
 local DevelopmentScreen = require "screens/development_menu"
-local Notify = require "util/player_notifier"
+local Say = require "util/say"
+local Extractor = require "util/extractor"
 local Threading = require "util/threading"
 local KeybindService = MOD_DEVELOPMENT_MENU.KEYBINDSERVICE
 
@@ -27,8 +28,8 @@ local function Format(str, ...)
     return StringFormat(str, ...)
 end
 
-local function NotifyFormatted(str, ...)
-    Notify(Format(str, ...))
+local function SayFormatted(str, ...)
+    Say(Format(str, ...))
 end
 
 local function PrintFormatted(str, ...)
@@ -73,7 +74,7 @@ end
 KeybindService:AddGlobalKey("SET_DEBUG_ENTITY", function()
     local ent = DeepSelect()
     if checkentity(ent) and ent.prefab then
-        NotifyFormatted("Debug entity: %s", ent.prefab)
+        SayFormatted("Debug entity: %s", ent.prefab)
     end
 end)
 
@@ -107,10 +108,10 @@ KeybindService:AddGlobalKey("DUMP_SELECT", function()
             for i,v in pairs(ent) do
                 print(i,v)
             end
-            NotifyFormatted("%s's table dumped", ent.prefab)
+            SayFormatted("%s's table dumped", ent.prefab)
         else
             DumpReplicasComponents(ent)
-            NotifyFormatted("%s's components & replicas dumped", ent.prefab)
+            SayFormatted("%s's components & replicas dumped", ent.prefab)
         end
     end
 end)
@@ -157,6 +158,7 @@ local function EventInterceptor(inst, event, ...)
     EntityScript.PushEvent(inst, event, ...)
 end
 
+-- @TODO Might wanna auto-detect these events in the future
 local FilteredEvents =
 {
     -- MouseOver
@@ -165,6 +167,13 @@ local FilteredEvents =
 
     -- Sound
     sharksounddirty = true;
+
+    -- Breather
+    ["frostybreather.breathevent"] = true;
+
+    -- PerformAction
+    isperformactionsuccessdirty = true;
+    performaction = true;
 
     -- Talking
     ontalk = true;
@@ -210,7 +219,7 @@ end
 KeybindService:AddKey("EVENT_LISTEN_SELECT", function()
     if TheInput:IsKeyDown(KEY_CTRL) then
         DetachEventInterceptors()
-        Notify("Stopped listening to events")
+        Say("Event Intercepting Stopped")
         return
     end
 
@@ -224,7 +233,7 @@ KeybindService:AddKey("EVENT_LISTEN_SELECT", function()
         end
         DetachEventInterceptors()
         AttachEventInterceptors(ent, interceptor)
-        NotifyFormatted("Now listening to events from %s | Mode: %s", ent.prefab, mode)
+        SayFormatted("Event Intercepting: %s | Mode: %s", ent.prefab, mode)
     end
 end)
 
@@ -240,7 +249,7 @@ KeybindService:AddGlobalKey("CLEAR_CONSOLE", function()
         end
         nolineprint(string.rep("-", 15) .. "| Console Cleared |" .. string.rep("-", 15))
 
-        Notify("Console log cleared")
+        Say("Console Log Cleared")
     end
 end)
 
@@ -263,7 +272,7 @@ local function ManipulateTimeScale(newTimeScale)
             TimeScale
         )
     )
-    NotifyFormatted("Time scale set to %s", TimeScale)
+    SayFormatted("Time scale: %s", TimeScale)
 end
 
 KeybindService:AddKey("DECREASE_TIME_SCALE", function()
@@ -316,29 +325,29 @@ end
 
 KeybindService:AddKey("NEXT_PHASE", function()
     TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_nextphase")]])
-    NotifyFormatted("Phase has changed to %s", GetNextPhase())
+    SayFormatted("Phase changed: %s", GetNextPhase())
 end)
 
 KeybindService:AddKey("FORCE_RAIN", function()
-    local state = "stopped"
+    local state = "Stopped"
 
     if TheInput:IsKeyDown(KEY_CTRL) then
         TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_deltamoisture", TheWorld.state.moistureceil)]])
-        state = "started"
+        state = "Started"
     else
         TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_deltamoisture", -TheWorld.state.moistureceil)]])
     end
 
-    NotifyFormatted("Rain %s", state)
+    SayFormatted("Rain: %s", state)
 end)
 
 KeybindService:AddKey("CHANGE_DAMAGE_MULTIPLIER", function()
     local dmgMult = TheInput:IsKeyDown(KEY_CTRL) and 999
-                 or 1
+                    or 1
 
-    TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier=" .. dmgMult)
+    TheNet:SendRemoteExecute("ThePlayer.components.combat.damagemultiplier = " .. dmgMult)
 
-    NotifyFormatted("Damage multiplier set to %s", dmgMult)
+    SayFormatted("Damage multiplier: %s", dmgMult)
 end)
 
 local function GetTags(ent)
@@ -386,17 +395,17 @@ local function PrintTagDeltas(ent, oldEntityTags)
 end
 
 local function DefaultThreadToggle(ent, thread, status)
-    NotifyFormatted(
-        "%s's %s %s",
-        ent.prefab,
+    SayFormatted(
+        "%s: %s %s",
         GetThreadName(thread),
+        ent.prefab,
         status
     )
 end
 
 local TagsThread =
 {
-    ID = "tags_thread",
+    ID = "Tags_Tracker",
     Thread = nil
 }
 KeybindService:AddKey("TAG_DELTAS_TRACKER", function()
@@ -421,10 +430,10 @@ KeybindService:AddKey("TAG_DELTAS_TRACKER", function()
             return ent:IsValid() and TagsThread.Thread
         end,
         function()
-            DefaultThreadToggle(ent, TagsThread.ID, "stopped")
+            DefaultThreadToggle(ent, TagsThread.ID, "Stopped")
         end)
 
-        DefaultThreadToggle(ent, TagsThread.ID, "started")
+        DefaultThreadToggle(ent, TagsThread.ID, "")
     end
 end)
 
@@ -460,7 +469,7 @@ end
 
 local AnimationThread =
 {
-    ID = "animation_thread",
+    ID = "Animation_Tracker",
     Thread = nil
 }
 KeybindService:AddKey("ANIMATION_DELTAS_TRACKER", function()
@@ -495,10 +504,10 @@ KeybindService:AddKey("ANIMATION_DELTAS_TRACKER", function()
                 return ent:IsValid() and AnimationThread.Thread
             end,
             function()
-                DefaultThreadToggle(ent, AnimationThread.ID, "stopped")
+                DefaultThreadToggle(ent, AnimationThread.ID, "Stopped")
             end)
 
-            DefaultThreadToggle(ent, AnimationThread.ID, "started | Mode: Deltas")
+            DefaultThreadToggle(ent, AnimationThread.ID, "| Mode: Delta")
         else
             AnimationThread.Thread = Threading:StartThread(AnimationThread.ID, function()
                 PrintAnimationDebug(ent)
@@ -508,10 +517,10 @@ KeybindService:AddKey("ANIMATION_DELTAS_TRACKER", function()
                 return ent:IsValid() and AnimationThread.Thread
             end,
             function()
-                DefaultThreadToggle(ent, AnimationThread.ID, "stopped")
+                DefaultThreadToggle(ent, AnimationThread.ID, "Stopped")
             end)
 
-            DefaultThreadToggle(ent, AnimationThread.ID, "started | Mode: Default")
+            DefaultThreadToggle(ent, AnimationThread.ID, "| Mode: Default")
         end
     end
 end)
@@ -546,51 +555,25 @@ local function GetRecipeNameFromCode(code)
     return code
 end
 
-local CONTROLS = {}
+local Controls = Extractor.GetControls()
+
 local function GetControlFromCode(code)
-    return CONTROLS[code] or code
+    return Controls[code] or code
 end
 
-for name, val in pairs(_G) do
-    if type(name) == "string" and name:sub(1,8) == "CONTROL_" then
-        CONTROLS[val] = name
-    end
-end
-
-local ControlRPCs =
-{
-    [RPC.StopControl] = true;
-}
+local ControlRPCs = Extractor.GetRPCsType("control")
 
 local function IsControlRPC(code)
     return ControlRPCs[code]
 end
 
-local ActionRPCs =
-{
-    [RPC.ControllerUseItemOnSelfFromInvTile] = true;
-    [RPC.ControllerUseItemOnSceneFromInvTile] = true;
-    [RPC.ControllerActionButton] = true;
-    [RPC.ControllerActionButtonPoint] = true;
-    [RPC.ControllerAltActionButton] = true;
-    [RPC.DoWidgetButtonAction] = true;
-    [RPC.UseItemFromInvTile] = true;
-    [RPC.ActionButton] = true;
-    [RPC.LeftClick] = true;
-    [RPC.RightClick] = true;
-}
+local ActionRPCs = Extractor.GetRPCsType("action")
 
--- @TODO Find a better way to detect RPC type
 local function IsActionRPC(code)
     return ActionRPCs[code]
 end
 
-local RecipeRPCs =
-{
-    [RPC.MakeRecipeFromMenu] = true;
-    [RPC.MakeRecipeAtPoint] = true;
-    [RPC.BufferBuild] = true;
-}
+local RecipeRPCs = Extractor.GetRPCsType("recipe")
 
 local function IsRecipeRPC(code)
     return RecipeRPCs[code]
@@ -646,19 +629,28 @@ local function RPCServerInterceptor(...)
 end
 
 KeybindService:AddKey("RPC_SERVER_LISTENER", function()
-    SendRPCToServer = SendRPCToServer == OldSendRPCToServer and RPCServerInterceptor
+    SendRPCToServer = SendRPCToServer ~= RPCServerInterceptor and RPCServerInterceptor
                       or OldSendRPCToServer
-    NotifyFormatted(
+    SayFormatted(
         "RPC monitor: %s",
         SendRPCToServer == RPCServerInterceptor and "Enabled"
         or "Disabled"
     )
 end)
 
-KeybindService:AddKey("STOP_THREADS", function()
+KeybindService:AddKey("STOP_DEBUGGING", function()
     SendRPCToServer = OldSendRPCToServer
     DetachEventInterceptors()
-    AnimationThread.Thread = nil
-    TagsThread.Thread = nil
-    Notify("Stopped all threads")
+
+    if AnimationThread.Thread then
+        Threading:StopThread(AnimationThread.ID)
+        AnimationThread.Thread = nil
+    end
+
+    if TagsThread.Thread then
+        Threading:StopThread(TagsThread.ID)
+        TagsThread.Thread = nil
+    end
+
+    Say("Stopped debugging")
 end)

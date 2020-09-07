@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.46"
+version = "0.47"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -264,8 +264,8 @@ configuration_options =
         AssignKeyMessage
     ),
     AddConfig(
-        "Stop all threads",
-        "STOP_THREADS",
+        "Stop debugging",
+        "STOP_DEBUGGING",
         KeyboardOptions,
         "KEY_F8",
         AssignKeyMessage
