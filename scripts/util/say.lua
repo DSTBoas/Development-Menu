@@ -1,5 +1,5 @@
-return function(str)
-    return ThePlayer
-       and ThePlayer.components.talker
-       and ThePlayer.components.talker:Say(str)
+return function(msg)
+    if ThePlayer and ThePlayer.components.talker then
+        ThePlayer.components.talker:Say(msg)
+    end
 end
