@@ -3,8 +3,8 @@ Assets =
     --Asset("ATLAS", "images/menu.xml"),
 }
 
-_G = GLOBAL
-require = _G.require
+local _G = GLOBAL
+local require = _G.require
 
 local MOD_DEVELOPMENT_MENU = {}
 MOD_DEVELOPMENT_MENU.MODNAME = modname
