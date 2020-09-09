@@ -224,8 +224,7 @@ KeybindService:AddGlobalKey("EVENT_LISTEN_SELECT", function()
     end
 
     local ent = DeepSelect()
-    if ent then
-        print("got here", ent)
+    if ValidateEntity(ent) then
         local interceptor = EventInterceptor
         local mode = "Default"
         if TheInput:IsKeyDown(KEY_SHIFT) then
