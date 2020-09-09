@@ -10,23 +10,32 @@ local MOD_DEVELOPMENT_MENU = {}
 MOD_DEVELOPMENT_MENU.MODNAME = modname
 MOD_DEVELOPMENT_MENU.KEYBINDSERVICE = require "util/keybindservice"(modname)
 _G.MOD_DEVELOPMENT_MENU = MOD_DEVELOPMENT_MENU
+
 require "keybinds"
 
-local Commands =
-{
-   FREECRAFTING = "c_freecrafting()",
-   GODMODE = "c_supergodmode()"
-}
+local function OnPlayerActivated(_, player)
+    if player ~= _G.ThePlayer then
+        return
+    end
 
-local function OnPlayerPostInit(inst)
-    inst:DoTaskInTime(0, function()
-        if inst == _G.ThePlayer then
-            for config, command in pairs(Commands) do
-                if GetModConfigData(config) then
-                    _G.TheNet:SendRemoteExecute(command)
-                end
-            end
+    local commands =
+    {
+       FREECRAFTING = "c_freecrafting()",
+       GODMODE = "c_supergodmode()"
+    }
+
+    for config, command in pairs(commands) do
+        if GetModConfigData(config) then
+            _G.TheNet:SendRemoteExecute(command)
         end
-    end)
+    end
 end
-AddPlayerPostInit(OnPlayerPostInit)
+
+local function OnWorldPostInit(inst)
+    if _G.TheWorld == nil then
+        return
+    end
+
+    _G.TheWorld:ListenForEvent("playeractivated", OnPlayerActivated, _G.TheWorld)
+end
+AddPrefabPostInit("world", OnWorldPostInit)

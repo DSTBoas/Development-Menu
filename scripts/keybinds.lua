@@ -216,7 +216,7 @@ local function AttachEventInterceptors(ent, interceptor)
     end
 end
 
-KeybindService:AddKey("EVENT_LISTEN_SELECT", function()
+KeybindService:AddGlobalKey("EVENT_LISTEN_SELECT", function()
     if TheInput:IsKeyDown(KEY_CTRL) then
         DetachEventInterceptors()
         Say("Event Intercepting Stopped")
@@ -224,7 +224,8 @@ KeybindService:AddKey("EVENT_LISTEN_SELECT", function()
     end
 
     local ent = DeepSelect()
-    if ValidateEntity(ent) then
+    if ent then
+        print("got here", ent)
         local interceptor = EventInterceptor
         local mode = "Default"
         if TheInput:IsKeyDown(KEY_SHIFT) then
@@ -652,5 +653,5 @@ KeybindService:AddKey("STOP_DEBUGGING", function()
         TagsThread.Thread = nil
     end
 
-    Say("Stopped debugging")
+    Say("Stop debugging")
 end)
