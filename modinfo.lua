@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.50"
+version = "0.51"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -287,15 +287,22 @@ configuration_options =
         AssignKeyMessage
     ),
     AddConfig(
-        "Stop / Start rain",
-        "FORCE_RAIN",
+        "Toggle rain",
+        "TOGGLE_RAIN",
         KeyboardOptions,
         "KEY_F10",
         AssignKeyMessage
     ),
 
 
-    AddSectionTitle("RPC Monitor"),
+    AddSectionTitle("RPC Translations"),
+    AddConfig(
+        "Translate rpc codes",
+        "TRANSLATE_RPC",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
     AddConfig(
         "Translate action codes",
         "TRANSLATE_ACTION",

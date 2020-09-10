@@ -158,7 +158,8 @@ local function EventInterceptor(inst, event, ...)
     EntityScript.PushEvent(inst, event, ...)
 end
 
--- @TODO Might wanna auto-detect these events in the future
+-- @TODO Auto-filter these events in the future
+-- Keeping it like this so devs can filter their own events
 local FilteredEvents =
 {
     -- MouseOver
@@ -184,6 +185,24 @@ local FilteredEvents =
     temperaturetick = true;
     weathertick = true;
     overridecolourmodifier = true;
+
+    -- Stats
+    hungerdirty = true;
+    hungerdelta = true;
+
+    sanitydirty = true;
+    sanitydelta = true;
+
+    healthdirty = true;
+    healthdelta = true;
+
+    temperaturedirty = true;
+    temperaturedelta = true;
+
+    -- Prediction
+    pausepredictionframesdirty = true;
+    cancelmovementprediction = true;
+
 }
 local function FilteredEventInterceptor(inst, event, ...)
     if not FilteredEvents[event] then
@@ -297,9 +316,9 @@ end)
 
 local PHASE_NAMES =
 {
-    "day",
-    "dusk",
-    "night",
+    "Day",
+    "Dusk",
+    "Night",
 }
 
 local function GetNextPhase()
@@ -307,7 +326,7 @@ local function GetNextPhase()
 
     if phase then
         for i = 1, #PHASE_NAMES do
-            if PHASE_NAMES[i] == phase then
+            if PHASE_NAMES[i]:lower() == phase then
                 if i == #PHASE_NAMES then
                     phase = PHASE_NAMES[1]
                 else
@@ -325,20 +344,27 @@ end
 
 KeybindService:AddKey("NEXT_PHASE", function()
     TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_nextphase")]])
-    SayFormatted("Phase changed: %s", GetNextPhase())
+    SayFormatted("Phase change: %s", GetNextPhase())
 end)
 
-KeybindService:AddKey("FORCE_RAIN", function()
-    local state = "Stopped"
+local function IsRaining()
+    return TheWorld
+       and TheWorld.state
+       and TheWorld.state.israining
+end
 
-    if TheInput:IsKeyDown(KEY_CTRL) then
-        TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_deltamoisture", TheWorld.state.moistureceil)]])
-        state = "Started"
-    else
+KeybindService:AddKey("TOGGLE_RAIN", function()
+    if IsRaining() then
         TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_deltamoisture", -TheWorld.state.moistureceil)]])
+    else
+        TheNet:SendRemoteExecute([[TheWorld:PushEvent("ms_deltamoisture", TheWorld.state.moistureceil)]])
     end
 
-    SayFormatted("Rain: %s", state)
+    SayFormatted(
+        "Rain: %s",
+        IsRaining() and "Stopped"
+        or "Started"
+    )
 end)
 
 KeybindService:AddKey("CHANGE_DAMAGE_MULTIPLIER", function()
@@ -525,10 +551,13 @@ KeybindService:AddKey("ANIMATION_DELTAS_TRACKER", function()
     end
 end)
 
+local TRANSLATE_RPC = GetModConfigData("TRANSLATE_RPC", MOD_DEVELOPMENT_MENU.MODNAME)
 local function GetRPCNameFromCode(code)
-    for rpcName, rpcCode in pairs(RPC) do
-        if code == rpcCode then
-            return "RPC." .. rpcName
+    if TRANSLATE_RPC then
+        for rpcName, rpcCode in pairs(RPC) do
+            if code == rpcCode then
+                return "RPC." .. rpcName
+            end
         end
     end
 
