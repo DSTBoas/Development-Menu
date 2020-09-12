@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.51"
+version = "0.52"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -201,6 +201,13 @@ configuration_options =
         AssignKeyMessage
     ),
     AddConfig(
+        "Save world",
+        "SAVE_WORLD",
+        KeyboardOptions,
+        "KEY_S",
+        AssignKeyMessage
+    ),
+    AddConfig(
         "Change damage multiplier",
         "CHANGE_DAMAGE_MULTIPLIER",
         KeyboardOptions,
@@ -291,6 +298,13 @@ configuration_options =
         "TOGGLE_RAIN",
         KeyboardOptions,
         "KEY_F10",
+        AssignKeyMessage
+    ),
+    AddConfig(
+        "Simulation step",
+        "SIM_STEP",
+        KeyboardOptions,
+        "KEY_F11",
         AssignKeyMessage
     ),
 

@@ -276,9 +276,23 @@ KeybindService:AddKey("TOGGLE_GODMODE", function()
     TheNet:SendRemoteExecute("c_supergodmode()")
 end)
 
+KeybindService:AddKey("SIM_STEP", function()
+    if TheInput:IsKeyDown(KEY_CTRL) then
+        TheNet:SendRemoteExecute([[if TheSim:IsDebugPaused() then TheSim:ToggleDebugPause() end]])
+        return
+    end
+    TheNet:SendRemoteExecute([[if not TheSim:IsDebugPaused() then TheSim:ToggleDebugPause() end TheSim:Step()]])
+end)
+
 KeybindService:AddKey("RESET_WORLD", function()
     if TheInput:IsKeyDown(KEY_CTRL) and TheInput:IsKeyDown(KEY_SHIFT) then
         TheNet:SendRemoteExecute("c_reset()")
+    end
+end)
+
+KeybindService:AddKey("SAVE_WORLD", function()
+    if TheInput:IsKeyDown(KEY_CTRL) then
+        TheNet:SendRemoteExecute("c_save()")
     end
 end)
 
