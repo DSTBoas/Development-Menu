@@ -257,17 +257,11 @@ KeybindService:AddGlobalKey("EVENT_LISTEN_SELECT", function()
 end)
 
 KeybindService:AddGlobalKey("CLEAR_CONSOLE", function()
-    if not TheInput:IsKeyDown(KEY_CTRL) then
-        -- local consoleOutputList = GetConsoleOutputList()
-
-        -- for i = 1, #consoleOutputList do
-        --     consoleOutputList[i] = nil
-        -- end
+    if not TheInput:IsKeyDown(KEY_CTRL) and not TheFrontEnd.forceProcessText then
         for _ = 1, 19 do
             nolineprint("")
         end
         nolineprint(string.rep("-", 15) .. "| Console Cleared |" .. string.rep("-", 15))
-
         Say("Console Log Cleared")
     end
 end)
@@ -478,8 +472,7 @@ KeybindService:AddKey("TAG_DELTAS_TRACKER", function()
 end)
 
 local function GetAnimation(ent)
-           -- Credit for the regex goes to @Victor | Steam handle: DemonBlink
-    return string.match(ent:GetDebugString(), "AnimState:.*anim:%s+(%S+)")
+    return string.match(ent:GetDebugString(), "AnimState:.*anim:%s+(%S+)") -- Credit for the regex goes to @Victor | Steam handle: DemonBlink
 end
 
 local function GetAnimationLengthInFrames(ent)
@@ -494,7 +487,7 @@ local function PrintAnimationDebug(ent)
     local animation = GetAnimation(ent)
     local animationTimeInFrames = GetAnimationTimeInFrames(ent)
     local animationLengthInFrames = GetAnimationLengthInFrames(ent)
-    local totalAnimationLoops = math.floor(animationTimeInFrames / animationLengthInFrames)
+    local animationLoops = math.floor(animationTimeInFrames / animationLengthInFrames)
     animationTimeInFrames = animationTimeInFrames % animationLengthInFrames
 
     PrintFormatted(
@@ -503,7 +496,7 @@ local function PrintAnimationDebug(ent)
         animation,
         animationTimeInFrames,
         animationLengthInFrames,
-        totalAnimationLoops
+        animationLoops
     )
 end
 

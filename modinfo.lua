@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.52"
+version = "0.54"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -304,7 +304,7 @@ configuration_options =
         "Simulation step",
         "SIM_STEP",
         KeyboardOptions,
-        "KEY_F11",
+        false,
         AssignKeyMessage
     ),
 
