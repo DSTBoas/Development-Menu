@@ -32,10 +32,6 @@ local function OnPlayerActivated(_, player)
 end
 
 local function OnWorldPostInit(inst)
-    if _G.TheWorld == nil then
-        return
-    end
-
-    _G.TheWorld:ListenForEvent("playeractivated", OnPlayerActivated, _G.TheWorld)
+    inst:ListenForEvent("playeractivated", OnPlayerActivated, _G.TheWorld)
 end
 AddPrefabPostInit("world", OnWorldPostInit)

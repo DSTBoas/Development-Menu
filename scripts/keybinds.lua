@@ -196,8 +196,18 @@ local FilteredEvents =
     healthdirty = true;
     healthdelta = true;
 
+    -- ThePlayer
     temperaturedirty = true;
     temperaturedelta = true;
+
+    moisturedelta = true;
+
+    -- 
+    newstate = true;
+    animover = true;
+    animqueueover = true;
+    locomote = true;
+
 
     -- Prediction
     pausepredictionframesdirty = true;
