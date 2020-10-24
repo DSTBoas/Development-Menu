@@ -1,9 +1,9 @@
 local function ReadFile(path)
     local ret = ""
 
-    local file = io.open(path, "r")
-    if file ~= nil then
-        ret = file:read("*all")
+    local file = io.open(path, "rb")
+    if file then
+        ret = file:read("*a")
         file:close()
     end
 
@@ -19,7 +19,7 @@ local function ExtractRPCsWithType()
                         )
 
     if not rpcHandlers then
-        return {}
+        return
     end
 
     local RPCTypes =
@@ -48,7 +48,6 @@ local function ExtractRPCsWithType()
         end
     end
 end
-ExtractRPCsWithType()
 
 local function GetRPCsType(rType)
     local ret = {}
@@ -77,6 +76,8 @@ local function GetControls()
 
     return ret
 end
+
+ExtractRPCsWithType()
 
 return
 {

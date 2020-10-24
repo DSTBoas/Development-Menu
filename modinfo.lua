@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "0.55"
+version = "0.56"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -183,7 +183,7 @@ configuration_options =
         "Toggle menu",
         "TOGGLE_DEVELOPMENT_MENU",
         KeyboardOptions,
-        "KEY_RIGHTBRACKET",
+        false,
         AssignKeyMessage
     ),
     AddConfig(
