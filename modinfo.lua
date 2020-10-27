@@ -40,7 +40,7 @@ local function AddSectionTitle(title)
     return AddConfig(title, "", {{description = "", data = 0}}, 0)
 end
 
-local function GetKeyboardOptions()
+local function GetKeyboardOptions(hover)
     local keys = {}
     local nameKeys =
     {
@@ -50,13 +50,10 @@ local function GetKeyboardOptions()
         "Space",
         "Enter",
         "Esc",
-        "Insert",
-        "Delete",
-        "End",
-        "Scroll lock",
+        "Pause",
         "Print Screen",
-        "Capslock",
-        "Scrollock",
+        "Caps Lock",
+        "Scroll Lock",
         "Right Shift",
         "Left Shift",
         "Shift",
@@ -67,19 +64,23 @@ local function GetKeyboardOptions()
         "Left Alt",
         "Alt",
         "Backspace",
+        "\\",
         ".",
         "/",
         ";",
-        "}",
         "{",
-        "\\",
+        "}",
         "~",
-        "↑",
-        "↓",
-        "→",
-        "←",
-        "Page up",
-        "Page down"
+        "Arrow Up",
+        "Arrow Down",
+        "Arrow Right",
+        "Arrow Left",
+        "Insert",
+        "Delete",
+        "Home",
+        "End",
+        "Page Up",
+        "Page Down"
     }
     local specialKeys =
     {
@@ -89,9 +90,6 @@ local function GetKeyboardOptions()
         "SPACE",
         "ENTER",
         "ESCAPE",
-        "INSERT",
-        "DELETE",
-        "END",
         "PAUSE",
         "PRINT",
         "CAPSLOCK",
@@ -106,53 +104,57 @@ local function GetKeyboardOptions()
         "LALT",
         "ALT",
         "BACKSPACE",
+        "BACKSLASH",
         "PERIOD",
         "SLASH",
         "SEMICOLON",
-        "LEFTBRACKET",
         "RIGHTBRACKET",
-        "BACKSLASH",
+        "LEFTBRACKET",
         "TILDE",
         "UP",
         "DOWN",
         "RIGHT",
         "LEFT",
+        "INSERT",
+        "DELETE",
+        "HOME",
+        "END",
         "PAGEUP",
         "PAGEDOWN",
     }
 
-    local function AddConfigKey(t, key)
-        t[#t + 1] = AddConfigOption(key, "KEY_" .. key)
+    local function AddConfigKey(t, key, hover)
+        t[#t + 1] = AddConfigOption(key, "KEY_" .. key, hover)
     end
 
-    local function AddConfigSpecialKey(t, name, key)
-        t[#t + 1] = AddConfigOption(name, "KEY_" .. key)
+    local function AddConfigSpecialKey(t, name, key, hover)
+        t[#t + 1] = AddConfigOption(name, "KEY_" .. key, hover)
     end
 
-    local function AddDisabledConfigOption(t)
-        t[#t + 1] = AddConfigOption("Disabled", false)
+    local function AddDisabledConfigOption(t, hover)
+        t[#t + 1] = AddConfigOption("Disabled", false, hover)
     end
 
-    AddDisabledConfigOption(keys)
+    AddDisabledConfigOption(keys, hover)
 
     local string = ""
     for i = 1, 26 do
-        AddConfigKey(keys, string.char(64 + i))
+        AddConfigKey(keys, string.char(64 + i), hover)
     end
 
     for i = 1, 10 do
-        AddConfigKey(keys, i % 10 .. "")
+        AddConfigKey(keys, i % 10 .. "", hover)
     end
 
     for i = 1, 12 do
-        AddConfigKey(keys, "F" .. i)
+        AddConfigKey(keys, "F" .. i, hover)
     end
 
     for i = 1, #specialKeys do
-        AddConfigSpecialKey(keys, nameKeys[i], specialKeys[i])
+        AddConfigSpecialKey(keys, nameKeys[i], specialKeys[i], hover)
     end
     
-    AddDisabledConfigOption(keys)
+    AddDisabledConfigOption(keys, hover)
 
     return keys
 end
@@ -173,7 +175,6 @@ end
 local KeyboardOptions = GetKeyboardOptions()
 local SettingOptions = GetDefaultOptions()
 local AssignKeyMessage = "Assign a key"
-local AssignLanguageMessage = "Select your language"
 local SettingMessage = "Set to your liking"
 
 configuration_options =
