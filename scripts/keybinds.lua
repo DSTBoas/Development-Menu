@@ -1,6 +1,5 @@
 local DevelopmentScreen = require "screens/development_menu"
 local Say = require "util/say"
-local Extractor = require "util/extractor"
 local Threading = require "util/threading"
 local KeybindService = MOD_DEVELOPMENT_MENU.KEYBINDSERVICE
 
@@ -148,13 +147,13 @@ local function GetFormattedOsClock()
 end
 
 local function EventInterceptor(inst, event, ...)
-
     PrintFormatted(
         "[%s] [EVENT] [%s] %s",
         GetFormattedOsClock(),
         inst.prefab,
         event
     )
+
     EntityScript.PushEvent(inst, event, ...)
 end
 
@@ -601,25 +600,25 @@ local function GetRecipeNameFromCode(code)
     return code
 end
 
-local Controls = Extractor.GetControls()
+local Controls = {}
 
 local function GetControlFromCode(code)
     return Controls[code] or code
 end
 
-local ControlRPCs = Extractor.GetRPCsType("control")
+local ControlRPCs = {}
 
 local function IsControlRPC(code)
     return ControlRPCs[code]
 end
 
-local ActionRPCs = Extractor.GetRPCsType("action")
+local ActionRPCs = {}
 
 local function IsActionRPC(code)
     return ActionRPCs[code]
 end
 
-local RecipeRPCs = Extractor.GetRPCsType("recipe")
+local RecipeRPCs = {}
 
 local function IsRecipeRPC(code)
     return RecipeRPCs[code]
@@ -674,9 +673,20 @@ local function RPCServerInterceptor(...)
     OldSendRPCToServer(...)
 end
 
+local ExtractorCycled = false
 KeybindService:AddKey("RPC_SERVER_LISTENER", function()
+    if not ExtractorCycled then
+        ExtractorCycled = true
+        local Extractor = require "util/extractor"
+        Controls = Extractor.GetControls()
+        ControlRPCs = Extractor.GetRPCsType("control")
+        ActionRPCs = Extractor.GetRPCsType("action")
+        RecipeRPCs = Extractor.GetRPCsType("recipe")
+    end
+
     SendRPCToServer = SendRPCToServer ~= RPCServerInterceptor and RPCServerInterceptor
                       or OldSendRPCToServer
+
     SayFormatted(
         "RPC monitor: %s",
         SendRPCToServer == RPCServerInterceptor and "Enabled"
